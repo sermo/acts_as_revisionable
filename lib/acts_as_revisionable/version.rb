@@ -1,3 +1,3 @@
 module ActsAsRevisionable
-  VERSION = '1.3.0.sermo'
+  VERSION = '1.4.0.sermo'
 end

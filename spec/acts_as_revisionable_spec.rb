@@ -464,7 +464,7 @@ describe ActsAsRevisionable do
       model.reload
       ActsAsRevisionable::RevisionRecord.count.should == 0
 
-      model.should_receive(:update).and_raise("update failed")
+      model.should_receive(:save).and_raise("update failed")
       model.name = 'new_name'
       begin
         model.store_revision do
@@ -654,7 +654,6 @@ describe ActsAsRevisionable do
       ActsAsRevisionable::RevisionRecord.count.should == 1
       model.name.should == 'new_name'
       model.one_thing(true).name.should == 'new_other'
-
       model.restore_revision!(1)
       RevisionableTestModel.count.should == 1
       RevisionableTestOneThing.count.should == 1
