@@ -60,9 +60,9 @@ module ActsAsRevisionable
       extend ClassMethods
       include InstanceMethods
       class_name = acts_as_revisionable_options[:class_name].to_s if acts_as_revisionable_options[:class_name]
-      has_many_options = {:as => :revisionable, :order => 'revision DESC', :class_name => class_name}
+      has_many_options = {:as => :revisionable, :class_name => class_name}
       has_many_options[:dependent] = :destroy unless options[:dependent] == :keep
-      has_many :revision_records, has_many_options
+      has_many :revision_records, -> { order('revision DESC') }, has_many_options
       alias_method_chain :update, :revision if options[:on_update]
       alias_method_chain :destroy, :revision if options[:on_destroy]
     end
@@ -168,7 +168,7 @@ module ActsAsRevisionable
                 end
               end
 
-              associated_records = [associated_records] unless associated_records.kind_of?(Array)
+              associated_records = [associated_records] unless associated_records.kind_of?(ActiveRecord::Associations::CollectionProxy)
               associated_records.each do |associated_record|
                 save_restorable_associations(associated_record, sub_associations) if associated_record
               end
@@ -212,7 +212,7 @@ module ActsAsRevisionable
         begin
           revision_record_class.transaction do
             begin
-              read_only = self.class.first(:conditions => {self.class.primary_key => self.id}, :readonly => true)
+              read_only = self.class.where(self.class.primary_key => self.id).readonly.first
               if read_only
                 callback = self.class.acts_as_revisionable_options[:before_store_revision]
                 if callback

@@ -3,6 +3,9 @@ require 'stringio'
 
 require 'active_record'
 require 'sqlite3'
+require 'protected_attributes'
+require 'pry'
+require 'pry-byebug'
 require File.expand_path('../../lib/acts_as_revisionable', __FILE__)
 
 ActiveRecord::ActiveRecordError
