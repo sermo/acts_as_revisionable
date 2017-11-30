@@ -332,29 +332,32 @@ describe ActsAsRevisionable::RevisionRecord do
     associated_record.errors[:other].should include("could not be restored to \"val2\"")
   end
 
-  xit "should be able to truncate the revisions for a record" do
-    revision = ActsAsRevisionable::RevisionRecord.new(TestRevisionableRecord.new(:name => 'name'))
-    revision.revision = 20
-    ActsAsRevisionable::RevisionRecord.should_receive(:find).with(:first, :conditions => ['revisionable_type = ? AND revisionable_id = ?', 'TestRevisionableRecord', 1], :offset => 15, :order => 'revision DESC').and_return(revision)
-    ActsAsRevisionable::RevisionRecord.should_receive(:delete_all).with(['revisionable_type = ? AND revisionable_id = ? AND revision <= ?', 'TestRevisionableRecord', 1, 20])
-    ActsAsRevisionable::RevisionRecord.truncate_revisions(TestRevisionableRecord, 1, :limit => 15)
+  it "should be able to truncate the revisions for a record" do
+    revisionable = TestRevisionableRecord.create!(:name => 'name')
+    revisions = 3.times.map do
+      ActsAsRevisionable::RevisionRecord.create!(revisionable)
+    end
+    ActsAsRevisionable::RevisionRecord.truncate_revisions(TestRevisionableRecord, revisionable.id, :limit => 2)
+    expect(ActsAsRevisionable::RevisionRecord.order(revision: :asc).to_a).to eq(revisions.from(1))
   end
 
-  xit "should be able to truncate the revisions for a record by age" do
-    revision = ActsAsRevisionable::RevisionRecord.new(TestRevisionableRecord.new(:name => 'name'))
-    revision.revision = 20
-    time = 2.weeks.ago
-    minimum_age = double(:integer, :ago => time, :to_i => 1)
-    Time.stub(:now).and_return(minimum_age)
-    ActsAsRevisionable::RevisionRecord.should_receive(:find).with(:first, :conditions => ['revisionable_type = ? AND revisionable_id = ? AND created_at <= ?', 'TestRevisionableRecord', 1, time], :offset => nil, :order => 'revision DESC').and_return(revision)
-    ActsAsRevisionable::RevisionRecord.should_receive(:delete_all).with(['revisionable_type = ? AND revisionable_id = ? AND revision <= ?', 'TestRevisionableRecord', 1, 20])
-    ActsAsRevisionable::RevisionRecord.truncate_revisions(TestRevisionableRecord, 1, :minimum_age => minimum_age)
+  it "should be able to truncate the revisions for a record by age" do
+    revisionable = TestRevisionableRecord.create!(:name => 'name')
+    revisions = 3.downto(1).map do |i|
+      ActsAsRevisionable::RevisionRecord.create!(revisionable).tap do |revision|
+        revision.update!(created_at: i.weeks.ago)
+      end
+    end
+    ActsAsRevisionable::RevisionRecord.truncate_revisions(TestRevisionableRecord, revisionable, :minimum_age => 15.days)
+    expect(ActsAsRevisionable::RevisionRecord.order(revision: :asc).to_a).to eq(revisions.from(1))
   end
 
-  xit "should not truncate the revisions for a record if it doesn't have enough" do
-    ActsAsRevisionable::RevisionRecord.should_receive(:find).with(:first, :conditions => ['revisionable_type = ? AND revisionable_id = ?', 'TestRevisionableRecord', 1], :offset => 15, :order => 'revision DESC').and_return(nil)
-    ActsAsRevisionable::RevisionRecord.should_not_receive(:delete_all)
-    ActsAsRevisionable::RevisionRecord.truncate_revisions(TestRevisionableRecord, 1, :limit => 15)
+  it "should not truncate the revisions for a record if it doesn't have enough" do
+    revisionable = TestRevisionableRecord.create!(:name => 'name')
+    ActsAsRevisionable::RevisionRecord.create!(revisionable)
+    expect {
+      ActsAsRevisionable::RevisionRecord.truncate_revisions(TestRevisionableRecord, revisionable.id, :limit => 15)
+    }.not_to change(ActsAsRevisionable::RevisionRecord, :count)
   end
 
   it "should not truncate the revisions for a record if no limit or minimum_age is set" do
@@ -363,16 +366,20 @@ describe ActsAsRevisionable::RevisionRecord do
     ActsAsRevisionable::RevisionRecord.truncate_revisions(TestRevisionableRecord, 1, :limit => nil, :minimum_age => nil)
   end
 
-  xit "should be able to find a record by revisioned type and id" do
-    revision = ActsAsRevisionable::RevisionRecord.new(TestRevisionableRecord.new(:name => 'name'))
-    ActsAsRevisionable::RevisionRecord.should_receive(:find).with(:first, :conditions => {:revisionable_type => 'TestRevisionableRecord', :revisionable_id => 1, :revision => 2}).and_return(revision)
-    ActsAsRevisionable::RevisionRecord.find_revision(TestRevisionableRecord, 1, 2).should == revision
+  it "should be able to find a record by revisioned type and id" do
+    revisionable = TestRevisionableRecord.create!(:name => 'name')
+    revision_record = ActsAsRevisionable::RevisionRecord.create!(revisionable)
+    found_revision = ActsAsRevisionable::RevisionRecord.find_revision(
+      TestRevisionableRecord, revisionable.id, revision_record.revision
+    )
+    expect(found_revision).to eq revision_record
   end
 
-  xit "should find the last revision" do
-    revision = ActsAsRevisionable::RevisionRecord.new(TestRevisionableRecord.new(:name => 'name'))
-    ActsAsRevisionable::RevisionRecord.should_receive(:find).with(:first, :conditions => {:revisionable_type => 'TestRevisionableRecord', :revisionable_id => 1}, :order => "revision DESC").and_return(revision)
-    ActsAsRevisionable::RevisionRecord.last_revision(TestRevisionableRecord, 1).should == revision
+  it "should find the last revision" do
+    revisionable = TestRevisionableRecord.create!(:name => 'name')
+    revisions = 2.times.map { ActsAsRevisionable::RevisionRecord.create!(revisionable) }
+    found_revision = ActsAsRevisionable::RevisionRecord.last_revision(TestRevisionableRecord, revisionable.id)
+    expect(found_revision).to eq revisions.last
   end
 
   it "should handle module namespaces" do
