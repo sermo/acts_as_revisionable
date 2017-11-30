@@ -63,7 +63,7 @@ module ActsAsRevisionable
       has_many_options = {:as => :revisionable, :class_name => class_name}
       has_many_options[:dependent] = :destroy unless options[:dependent] == :keep
       has_many :revision_records, -> { order('revision DESC') }, has_many_options
-      alias_method_chain :update, :revision if options[:on_update]
+      alias_method_chain :_update_record, :revision if options[:on_update]
       alias_method_chain :destroy, :revision if options[:on_destroy]
     end
   end
@@ -152,7 +152,7 @@ module ActsAsRevisionable
         if associations.kind_of?(Hash)
           associations.each_pair do |association, sub_associations|
             associated_records = record.send(association)
-            reflection = record.class.reflections[association].macro
+            reflection = record.class.reflections[association.to_s].macro
 
             if reflection == :has_and_belongs_to_many
               associated_records = associated_records.collect{|r| r}
@@ -297,9 +297,9 @@ module ActsAsRevisionable
     private
 
     # Update the record while recording the revision.
-    def update_with_revision
+    def _update_record_with_revision
       store_revision do
-        update_without_revision
+        _update_record_without_revision
       end
     end
 

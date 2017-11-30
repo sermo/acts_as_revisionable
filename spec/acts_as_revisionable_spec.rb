@@ -581,6 +581,7 @@ describe ActsAsRevisionable do
         many_other_thing_1.save!
       end
 
+      ActiveRecord::Base.logger = Logger.new(STDOUT)
       model.reload
       ActsAsRevisionable::RevisionRecord.count.should == 1
       RevisionableTestManyThing.count.should == 2

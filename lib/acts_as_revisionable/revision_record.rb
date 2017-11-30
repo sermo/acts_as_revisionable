@@ -27,7 +27,7 @@ module ActsAsRevisionable
         conditions = ['revisionable_type = ? AND revisionable_id = ?', revisionable_type.base_class.to_s, revisionable_id]
         if options[:minimum_age]
           conditions.first << ' AND created_at <= ?'
-          conditions << options[:minimum_age].ago
+          conditions << options[:minimum_age].seconds.ago
         end
 
         start_deleting_revision = where(conditions).order('revision DESC').offset(options[:limit]).first
@@ -40,7 +40,7 @@ module ActsAsRevisionable
       # The +revisionable_type+ argument specifies the class to delete revision records for.
       def empty_trash(revisionable_type, max_age)
         sql = "revisionable_id IN (SELECT revisionable_id from #{table_name} WHERE created_at <= ? AND revisionable_type = ? AND trash = ?) AND revisionable_type = ?"
-        args = [max_age.ago, revisionable_type.name, true, revisionable_type.name]
+        args = [max_age.seconds.ago, revisionable_type.name, true, revisionable_type.name]
         delete_all([sql] + args)
       end
 
@@ -173,7 +173,7 @@ module ActsAsRevisionable
 
       if hash
         hash.each_pair do |key, value|
-          if klass.reflections.include?(key.to_sym)
+          if klass.reflections.include?(key.to_s)
             association_attrs[key] = value
           else
             attrs[key] = value
@@ -185,8 +185,8 @@ module ActsAsRevisionable
     end
 
     def restore_association(record, association, association_attributes)
-      association = association.to_sym
-      reflection = record.class.reflections[association]
+      association = association
+      reflection = record.class.reflections[association.to_s]
       associated_record = nil
 
       begin
@@ -197,6 +197,7 @@ module ActsAsRevisionable
 
             # TODO: Find the way how to set it without updating the database data
             record.send("#{association}=", [])
+            # record.association(association).reset
 
             association_attributes.each do |attrs|
               restore_association(record, association, attrs)
