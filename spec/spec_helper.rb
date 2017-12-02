@@ -3,12 +3,10 @@ require 'stringio'
 
 require 'active_record'
 require 'sqlite3'
-require 'protected_attributes'
 require 'pry'
 require 'pry-byebug'
 require File.expand_path('../../lib/acts_as_revisionable', __FILE__)
 
-ActiveRecord::ActiveRecordError
 ActiveRecord::Base.logger = Logger.new(StringIO.new)
 
 puts "Testing with ActiveRecord #{ActiveRecord::VERSION::STRING}"

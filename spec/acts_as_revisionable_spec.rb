@@ -62,8 +62,6 @@ describe ActsAsRevisionable do
       has_one :one_thing, :class_name => 'RevisionableTestOneThing'
       has_and_belongs_to_many :non_revisionable_test_models
 
-      attr_protected :secret
-
       acts_as_revisionable :limit => 3, :dependent => :keep, :associations => [:one_thing, :non_revisionable_test_models, {:many_things => :sub_things}]
 
       def set_secret(val)
@@ -581,7 +579,6 @@ describe ActsAsRevisionable do
         many_other_thing_1.save!
       end
 
-      ActiveRecord::Base.logger = Logger.new(STDOUT)
       model.reload
       ActsAsRevisionable::RevisionRecord.count.should == 1
       RevisionableTestManyThing.count.should == 2

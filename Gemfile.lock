@@ -1,9 +1,8 @@
 PATH
   remote: .
   specs:
-    acts_as_revisionable (1.4.0.sermo)
-      activerecord (>= 3.2)
-      protected_attributes
+    acts_as_revisionable (1.5.0.sermo)
+      activerecord (>= 4.0)
 
 GEM
   remote: https://rubygems.org/
@@ -30,8 +29,6 @@ GEM
       concurrent-ruby (~> 1.0)
     method_source (0.8.2)
     minitest (5.10.3)
-    protected_attributes (1.1.4)
-      activemodel (>= 4.0.1, < 5.0)
     pry (0.10.4)
       coderay (~> 1.1.0)
       method_source (~> 0.8.1)
@@ -64,4 +61,4 @@ DEPENDENCIES
   sqlite3
 
 BUNDLED WITH
-   1.15.4
+   1.16.0
