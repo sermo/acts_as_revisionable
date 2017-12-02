@@ -192,12 +192,10 @@ module ActsAsRevisionable
       begin
         if reflection.macro == :has_many
           if association_attributes.kind_of?(Array)
-            # Pop all the associated records to remove all records. In Rails 3.2 setting the value of the list
-            # will immediately affect the database
-
-            # TODO: Find the way how to set it without updating the database data
-            record.send("#{association}=", [])
-            # record.association(association).reset
+            # Clear records
+            records = record.send(association)
+            records.to_a # load records
+            records.target.clear
 
             association_attributes.each do |attrs|
               restore_association(record, association, attrs)
